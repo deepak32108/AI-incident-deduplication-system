@@ -7,11 +7,14 @@ from src.rag.rag_pipeline import RAGPipeline
 from config import config
 from datetime import datetime
 import logging
+from flask_cors import CORS
+
+app = Flask(__name__)
+CORS(app)
 
 logging.basicConfig(level=config.LOG_LEVEL)
 logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
 
 # Initialize services
 try:
@@ -136,7 +139,12 @@ def search_incidents():
     except Exception as e:
         logger.error(f"Search error: {e}")
         return jsonify({'error': str(e)}), 500
-
+@app.route('/api', methods=['GET'])
+def api_home():
+    return jsonify({
+        "message": "AI Incident Deduplication API",
+        "status": "running"
+    })
 
 # ============ RESOLVE/CLOSE INCIDENTS ============
 

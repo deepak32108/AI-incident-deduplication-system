@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/AI-incident-dedup-system.iml" filepath="$PROJECT_DIR$/.idea/AI-incident-dedup-system.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/AI-incident-deduplication-system.iml" filepath="$PROJECT_DIR$/.idea/AI-incident-deduplication-system.iml" />
     </modules>
   </component>
 </project>

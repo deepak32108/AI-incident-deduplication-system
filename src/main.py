@@ -1,4 +1,7 @@
 import logging
+import webbrowser
+from threading import Timer
+
 from src.api.routes import app
 from config import config
 
@@ -10,8 +13,11 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+def open_browser():
+    webbrowser.open("http://localhost:5500/dashboard.html")
+
+
 def main():
-    """Main entry point"""
     logger.info("=" * 70)
     logger.info("AI INCIDENT DEDUPLICATION SYSTEM - STARTING")
     logger.info("=" * 70)
@@ -20,6 +26,8 @@ def main():
     logger.info(f"Vector Store: {config.VECTOR_DB_PATH}")
     logger.info("=" * 70)
 
+    Timer(2, open_browser).start()
+
     app.run(
         debug=True,
         host='0.0.0.0',
@@ -27,5 +35,5 @@ def main():
     )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
