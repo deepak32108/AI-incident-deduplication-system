@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Incident Deduplication System</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        header {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .status {
+            display: flex;
+            gap: 20px;
+            margin-top: 15px;
+        }
+
+        .status-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #4CAF50;
+        }
+
+        .status-dot.offline {
+            background: #f44336;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .card h2 {
+            color: #667eea;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+
+        .stat-box {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .stat-number {
+            font-size: 32px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+
+        .form-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        input, textarea, select {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        input:focus, textarea:focus, select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
+        }
+
+        button {
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            background: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin-top: 15px;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result pre {
+            background: #f0f0f0;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+
+        .incidents-list {
+            margin-top: 15px;
+        }
+
+        .incident-item {
+            background: #f5f5f5;
+            padding: 12px;
+            border-left: 4px solid #667eea;
+            margin-bottom: 10px;
+            border-radius: 5px;
+        }
+
+        .incident-title {
+            font-weight: 600;
+            color: #333;
+        }
+
+        .incident-meta {
+            font-size: 12px;
+            color: #666;
+            margin-top: 5px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 3px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-right: 5px;
+        }
+
+        .badge.critical {
+            background: #ffebee;
+            color: #c62828;
+        }
+
+        .badge.high {
+            background: #fff3e0;
+            color: #e65100;
+        }
+
+        .badge.medium {
+            background: #f3e5f5;
+            color: #6a1b9a;
+        }
+
+        .badge.low {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+
+        .badge.duplicate {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .badge.open {
+            background: #e3f2fd;
+            color: #1565c0;
+        }
+
+        .badge.resolved {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .error {
+            background: #ffebee;
+            color: #c62828;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .error.show {
+            display: block;
+        }
+
+        .success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            padding: 10px;
+            border-radius: 5px;
+            display: none;
+        }
+
+        .success.show {
+            display: block;
+        }
+
+        .full-width {
+            grid-column: 1 / -1;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+        }
+
+        .chart-bar {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+
+        .chart-label {
+            width: 120px;
+            font-size: 14px;
+            color: #666;
+        }
+
+        .chart-value {
+            flex: 1;
+            background: #e0e0e0;
+            height: 25px;
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .chart-fill {
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🚀 AI Incident Deduplication System</h1>
+            <div class="status">
+                <div class="status-item">
+                    <div class="status-dot" id="healthDot"></div>
+                    <span id="healthStatus">Checking...</span>
+                </div>
+                <div class="status-item">
+                    <span id="statsText">Loading stats...</span>
+                </div>
+            </div>
+        </header>
+
+        <div class="grid">
+            <!-- Statistics Card -->
+            <div class="card full-width">
+                <h2>📊 Statistics</h2>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
+                    <div class="stat-box">
+                        <div class="stat-number" id="totalIncidents">0</div>
+                        <div class="stat-label">Total Incidents</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="openIncidents">0</div>
+                        <div class="stat-label">Open</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="duplicateCount">0</div>
+                        <div class="stat-label">Duplicates</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="resolvedCount">0</div>
+                        <div class="stat-label">Resolved</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="deduplicationRate">0%</div>
+                        <div class="stat-label">Dedup Rate</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" id="resolutionRate">0%</div>
+                        <div class="stat-label">Resolution Rate</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Create Incident Card -->
+            <div class="card">
+                <h2>➕ Create Incident</h2>
+                <form id="createForm">
+                    <div class="form-group">
+                        <label for="title">Title *</label>
+                        <input type="text" id="title" placeholder="Incident title" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Description *</label>
+                        <textarea id="description" placeholder="Detailed description" required></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="severity">Severity *</label>
+                        <select id="severity" required>
+                            <option value="critical">🔴 Critical</option>
+                            <option value="high">🟠 High</option>
+                            <option value="medium">🟡 Medium</option>
+                            <option value="low">🟢 Low</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="source">Source *</label>
+                        <input type="text" id="source" placeholder="Service/system name" required>
+                    </div>
+                    <button type="submit">Create Incident</button>
+                    <div id="createError" class="error"></div>
+                    <div id="createSuccess" class="success"></div>
+                </form>
+            </div>
+
+            <!-- Search/Get Incident Card -->
+            <div class="card">
+                <h2>🔍 Get Incident</h2>
+                <form id="getForm">
+                    <div class="form-group">
+                        <label for="incidentId">Incident ID</label>
+                        <input type="text" id="incidentId" placeholder="Enter incident ID">
+                    </div>
+                    <button type="submit">Search</button>
+                    <div id="getError" class="error"></div>
+                </form>
+                <div id="getResult" class="result"></div>
+            </div>
+
+            <!-- Health Check Card -->
+            <div class="card">
+                <h2>❤️ Health Check</h2>
+                <button onclick="healthCheck()" style="margin-bottom: 15px;">Check Health</button>
+                <div id="healthResult" class="result"></div>
+            </div>
+
+            <!-- All Incidents Card -->
+            <div class="card full-width">
+                <h2>📋 All Incidents</h2>
+                <button onclick="listIncidents()" style="margin-bottom: 15px;">Refresh List</button>
+                <div id="incidentsList" class="incidents-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+
+        // Check health on load
+        window.addEventListener('load', () => {
+            healthCheck();
+            getStats();
+            listIncidents();
+            setInterval(() => {
+                getStats();
+                listIncidents();
+            }, 5000); // Refresh every 5 seconds
+        });
+
+        // Health Check
+        async function healthCheck() {
+            try {
+                const response = await fetch(`${API_URL}/health`);
+                const data = await response.json();
+
+                document.getElementById('healthDot').classList.remove('offline');
+                document.getElementById('healthStatus').textContent = `✅ API Online (${data.vector_store_size} vectors)`;
+                document.getElementById('healthResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                document.getElementById('healthResult').classList.add('show');
+            } catch (e) {
+                document.getElementById('healthDot').classList.add('offline');
+                document.getElementById('healthStatus').textContent = '❌ API Offline';
+            }
+        }
+
+        // Get Statistics
+        async function getStats() {
+            try {
+                const response = await fetch(`${API_URL}/incidents/stats`);
+                const data = await response.json();
+
+                document.getElementById('totalIncidents').textContent = data.total_incidents;
+                document.getElementById('openIncidents').textContent = data.open_incidents;
+                document.getElementById('duplicateCount').textContent = data.duplicate_count;
+                document.getElementById('resolvedCount').textContent = data.resolved_count;
+                document.getElementById('deduplicationRate').textContent = data.deduplication_rate.toFixed(1) + '%';
+                document.getElementById('resolutionRate').textContent = data.resolution_rate.toFixed(1) + '%';
+                document.getElementById('statsText').textContent = `${data.total_incidents} incidents, ${data.duplicate_count} duplicates detected`;
+            } catch (e) {
+                console.error('Stats error:', e);
+            }
+        }
+
+        // Create Incident
+        document.getElementById('createForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const data = {
+                title: document.getElementById('title').value,
+                description: document.getElementById('description').value,
+                severity: document.getElementById('severity').value,
+                source: document.getElementById('source').value
+            };
+
+            try {
+                const response = await fetch(`${API_URL}/incidents`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('createSuccess').textContent =
+                        `✅ Incident created (ID: ${result.id}, Duplicate: ${result.is_duplicate})`;
+                    document.getElementById('createSuccess').classList.add('show');
+                    document.getElementById('createError').classList.remove('show');
+                    document.getElementById('createForm').reset();
+
+                    setTimeout(() => getStats(), 1000);
+                } else {
+                    document.getElementById('createError').textContent = `❌ ${result.error}`;
+                    document.getElementById('createError').classList.add('show');
+                }
+            } catch (e) {
+                document.getElementById('createError').textContent = `❌ Error: ${e.message}`;
+                document.getElementById('createError').classList.add('show');
+            }
+        });
+
+        // Get Incident
+        document.getElementById('getForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            const id = document.getElementById('incidentId').value;
+
+            try {
+                const response = await fetch(`${API_URL}/incidents/${id}`);
+                const data = await response.json();
+
+                if (response.ok) {
+                    document.getElementById('getResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
+                    document.getElementById('getResult').classList.add('show');
+                    document.getElementById('getError').classList.remove('show');
+                } else {
+                    document.getElementById('getError').textContent = `❌ ${data.error}`;
+                    document.getElementById('getError').classList.add('show');
+                }
+            } catch (e) {
+                document.getElementById('getError').textContent = `❌ Error: ${e.message}`;
+                document.getElementById('getError').classList.add('show');
+            }
+        });
+
+        // List Incidents
+        async function listIncidents() {
+            try {
+                const response = await fetch(`${API_URL}/incidents`);
+                const data = await response.json();
+
+                const list = document.getElementById('incidentsList');
+                if (data.incidents.length === 0) {
+                    list.innerHTML = '<p style="color: #999;">No incidents yet</p>';
+                    return;
+                }
+
+                list.innerHTML = data.incidents.map(inc => `
+                    <div class="incident-item">
+                        <div class="incident-title">${inc.title}</div>
+                        <div class="incident-meta">
+                            <span class="badge ${inc.severity}">${inc.severity}</span>
+                            <span class="badge ${inc.status}">${inc.status}</span>
+                            ${inc.is_duplicate ? `<span class="badge duplicate">Duplicate</span>` : ''}
+                            <br>
+                            <small>ID: ${inc.id}</small><br>
+                            <small>Source: ${inc.source}</small>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                console.error('List error:', e);
+            }
+        }
+    </script>
+</body>
+</html>
