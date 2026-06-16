@@ -3,556 +3,302 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Incident Deduplication System</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            padding: 20px;
-        }
-
-        .container {
-            max-width: 1200px;
-            margin: 0 auto;
-        }
-
-        header {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            margin-bottom: 20px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .status {
-            display: flex;
-            gap: 20px;
-            margin-top: 15px;
-        }
-
-        .status-item {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .status-dot {
-            width: 12px;
-            height: 12px;
-            border-radius: 50%;
-            background: #4CAF50;
-        }
-
-        .status-dot.offline {
-            background: #f44336;
-        }
-
-        .grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-            gap: 20px;
-            margin-bottom: 20px;
-        }
-
-        .card {
-            background: white;
-            padding: 20px;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        }
-
-        .card h2 {
-            color: #667eea;
-            margin-bottom: 15px;
-            font-size: 18px;
-        }
-
-        .stat-box {
-            background: #f5f5f5;
-            padding: 15px;
-            border-radius: 8px;
-            text-align: center;
-            margin: 10px 0;
-        }
-
-        .stat-number {
-            font-size: 32px;
-            font-weight: bold;
-            color: #667eea;
-        }
-
-        .stat-label {
-            color: #666;
-            font-size: 14px;
-            margin-top: 5px;
-        }
-
-        .form-group {
-            margin-bottom: 15px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 5px;
-            color: #333;
-            font-weight: 500;
-        }
-
-        input, textarea, select {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 5px;
-            font-size: 14px;
-            font-family: inherit;
-        }
-
-        textarea {
-            resize: vertical;
-            min-height: 80px;
-        }
-
-        input:focus, textarea:focus, select:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 5px rgba(102, 126, 234, 0.1);
-        }
-
-        button {
-            width: 100%;
-            padding: 12px;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            border-radius: 5px;
-            font-size: 14px;
-            font-weight: 600;
-            cursor: pointer;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 6px 12px rgba(0,0,0,0.15);
-        }
-
-        button:active {
-            transform: translateY(0);
-        }
-
-        .result {
-            background: #f9f9f9;
-            padding: 15px;
-            border-radius: 5px;
-            margin-top: 15px;
-            max-height: 200px;
-            overflow-y: auto;
-            display: none;
-        }
-
-        .result.show {
-            display: block;
-        }
-
-        .result pre {
-            background: #f0f0f0;
-            padding: 10px;
-            border-radius: 5px;
-            overflow-x: auto;
-            font-size: 12px;
-        }
-
-        .incidents-list {
-            margin-top: 15px;
-        }
-
-        .incident-item {
-            background: #f5f5f5;
-            padding: 12px;
-            border-left: 4px solid #667eea;
-            margin-bottom: 10px;
-            border-radius: 5px;
-        }
-
-        .incident-title {
-            font-weight: 600;
-            color: #333;
-        }
-
-        .incident-meta {
-            font-size: 12px;
-            color: #666;
-            margin-top: 5px;
-        }
-
-        .badge {
-            display: inline-block;
-            padding: 4px 8px;
-            border-radius: 3px;
-            font-size: 12px;
-            font-weight: 600;
-            margin-right: 5px;
-        }
-
-        .badge.critical {
-            background: #ffebee;
-            color: #c62828;
-        }
-
-        .badge.high {
-            background: #fff3e0;
-            color: #e65100;
-        }
-
-        .badge.medium {
-            background: #f3e5f5;
-            color: #6a1b9a;
-        }
-
-        .badge.low {
-            background: #e8f5e9;
-            color: #2e7d32;
-        }
-
-        .badge.duplicate {
-            background: #fff9c4;
-            color: #f57f17;
-        }
-
-        .badge.open {
-            background: #e3f2fd;
-            color: #1565c0;
-        }
-
-        .badge.resolved {
-            background: #c8e6c9;
-            color: #2e7d32;
-        }
-
-        .error {
-            background: #ffebee;
-            color: #c62828;
-            padding: 10px;
-            border-radius: 5px;
-            display: none;
-        }
-
-        .error.show {
-            display: block;
-        }
-
-        .success {
-            background: #e8f5e9;
-            color: #2e7d32;
-            padding: 10px;
-            border-radius: 5px;
-            display: none;
-        }
-
-        .success.show {
-            display: block;
-        }
-
-        .full-width {
-            grid-column: 1 / -1;
-        }
-
-        .chart-container {
-            margin-top: 20px;
-        }
-
-        .chart-bar {
-            display: flex;
-            align-items: center;
-            margin-bottom: 15px;
-        }
-
-        .chart-label {
-            width: 120px;
-            font-size: 14px;
-            color: #666;
-        }
-
-        .chart-value {
-            flex: 1;
-            background: #e0e0e0;
-            height: 25px;
-            border-radius: 5px;
-            overflow: hidden;
-        }
-
-        .chart-fill {
-            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
-            height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: flex-end;
-            padding-right: 10px;
-            color: white;
-            font-size: 12px;
-            font-weight: 600;
-        }
-    </style>
+    <title>AI Incident Deduplication Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 </head>
-<body>
-    <div class="container">
-        <header>
-            <h1>🚀 AI Incident Deduplication System</h1>
-            <div class="status">
-                <div class="status-item">
-                    <div class="status-dot" id="healthDot"></div>
-                    <span id="healthStatus">Checking...</span>
-                </div>
-                <div class="status-item">
-                    <span id="statsText">Loading stats...</span>
-                </div>
-            </div>
-        </header>
+<body class="bg-slate-900 text-slate-100 font-sans min-h-screen">
 
-        <div class="grid">
-            <!-- Statistics Card -->
-            <div class="card full-width">
-                <h2>📊 Statistics</h2>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 15px;">
-                    <div class="stat-box">
-                        <div class="stat-number" id="totalIncidents">0</div>
-                        <div class="stat-label">Total Incidents</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="openIncidents">0</div>
-                        <div class="stat-label">Open</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="duplicateCount">0</div>
-                        <div class="stat-label">Duplicates</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="resolvedCount">0</div>
-                        <div class="stat-label">Resolved</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="deduplicationRate">0%</div>
-                        <div class="stat-label">Dedup Rate</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="resolutionRate">0%</div>
-                        <div class="stat-label">Resolution Rate</div>
-                    </div>
-                </div>
+    <nav class="border-b border-slate-800 bg-slate-950 px-6 py-4 flex justify-between items-center sticky top-0 z-50">
+        <div class="flex items-center space-x-3">
+            <div class="bg-indigo-600 text-white p-2 rounded-lg shadow-md shadow-indigo-500/20">
+                <i class="fa-solid mt-0.5 fa-shield-cat text-xl"></i>
             </div>
-
-            <!-- Create Incident Card -->
-            <div class="card">
-                <h2>➕ Create Incident</h2>
-                <form id="createForm">
-                    <div class="form-group">
-                        <label for="title">Title *</label>
-                        <input type="text" id="title" placeholder="Incident title" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="description">Description *</label>
-                        <textarea id="description" placeholder="Detailed description" required></textarea>
-                    </div>
-                    <div class="form-group">
-                        <label for="severity">Severity *</label>
-                        <select id="severity" required>
-                            <option value="critical">🔴 Critical</option>
-                            <option value="high">🟠 High</option>
-                            <option value="medium">🟡 Medium</option>
-                            <option value="low">🟢 Low</option>
-                        </select>
-                    </div>
-                    <div class="form-group">
-                        <label for="source">Source *</label>
-                        <input type="text" id="source" placeholder="Service/system name" required>
-                    </div>
-                    <button type="submit">Create Incident</button>
-                    <div id="createError" class="error"></div>
-                    <div id="createSuccess" class="success"></div>
-                </form>
-            </div>
-
-            <!-- Search/Get Incident Card -->
-            <div class="card">
-                <h2>🔍 Get Incident</h2>
-                <form id="getForm">
-                    <div class="form-group">
-                        <label for="incidentId">Incident ID</label>
-                        <input type="text" id="incidentId" placeholder="Enter incident ID">
-                    </div>
-                    <button type="submit">Search</button>
-                    <div id="getError" class="error"></div>
-                </form>
-                <div id="getResult" class="result"></div>
-            </div>
-
-            <!-- Health Check Card -->
-            <div class="card">
-                <h2>❤️ Health Check</h2>
-                <button onclick="healthCheck()" style="margin-bottom: 15px;">Check Health</button>
-                <div id="healthResult" class="result"></div>
-            </div>
-
-            <!-- All Incidents Card -->
-            <div class="card full-width">
-                <h2>📋 All Incidents</h2>
-                <button onclick="listIncidents()" style="margin-bottom: 15px;">Refresh List</button>
-                <div id="incidentsList" class="incidents-list"></div>
+            <div>
+                <h1 class="text-lg font-bold tracking-tight text-white">IncidentIntel</h1>
+                <p class="text-xs text-slate-400">AI-Powered Deduplication Engine</p>
             </div>
         </div>
-    </div>
+        <div class="flex items-center space-x-4">
+            <span class="flex h-2 w-2 relative">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+                <span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span class="text-xs font-semibold text-slate-300 bg-slate-800 px-3 py-1.5 rounded-full border border-slate-700">Live Telemetry Sync</span>
+        </div>
+    </nav>
+
+    <main class="max-w-7xl mx-auto p-6 space-y-8">
+
+        <section id="metrics-grid" class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 shadow-sm flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-sm font-medium text-slate-400">Total Ingested</p>
+                    <h3 id="stat-total" class="text-3xl font-bold tracking-tight text-white">0</h3>
+                </div>
+                <div class="p-3 bg-slate-900 rounded-lg text-slate-400 border border-slate-800"><i class="fa-solid fa-layer-group text-xl"></i></div>
+            </div>
+            <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 shadow-sm flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-sm font-medium text-slate-400">Active Open</p>
+                    <h3 id="stat-open" class="text-3xl font-bold tracking-tight text-amber-500">0</h3>
+                </div>
+                <div class="p-3 bg-slate-900 rounded-lg text-amber-500/10 text-amber-500 border border-amber-500/20"><i class="fa-solid fa-circle-dot text-xl"></i></div>
+            </div>
+            <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 shadow-sm flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-sm font-medium text-slate-400">Interception Blocked</p>
+                    <h3 id="stat-duplicates" class="text-3xl font-bold tracking-tight text-indigo-400">0</h3>
+                </div>
+                <div class="p-3 bg-slate-900 rounded-lg text-indigo-400/10 text-indigo-400 border border-indigo-500/20"><i class="fa-solid fa-clone text-xl"></i></div>
+            </div>
+            <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 shadow-sm flex items-center justify-between">
+                <div class="space-y-1">
+                    <p class="text-sm font-medium text-slate-400">Deduplication Rate</p>
+                    <h3 id="stat-rate" class="text-3xl font-bold tracking-tight text-emerald-400">0%</h3>
+                </div>
+                <div class="p-3 bg-slate-900 rounded-lg text-emerald-400/10 text-emerald-400 border border-emerald-500/20"><i class="fa-solid fa-wand-magic-sparkles text-xl"></i></div>
+            </div>
+        </section>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
+
+            <section class="bg-slate-950 p-6 rounded-xl border border-slate-800 shadow-xl space-y-5 lg:col-span-1">
+                <div>
+                    <h2 class="text-base font-bold text-white flex items-center gap-2">
+                        <i class="fa-solid fa-file-circle-plus text-indigo-400"></i> Log New Incident
+                    </h2>
+                    <p class="text-xs text-slate-400 mt-1">Submit an anomaly report directly to run AI vector similarity matches.</p>
+                </div>
+
+                <form id="incident-form" onsubmit="submitNewIncident(event)" class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Incident Title</label>
+                        <input type="text" id="form-title" required placeholder="e.g., Pressure Drop Alert - Sector 4"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Source System Origin</label>
+                        <input type="text" id="form-source" required placeholder="e.g., SCADA_Telemetry"
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Severity Level Impact</label>
+                        <select id="form-severity" class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 focus:outline-none focus:border-indigo-500 transition cursor-pointer">
+                            <option value="LOW">LOW</option>
+                            <option value="HIGH">HIGH</option>
+                            <option value="CRITICAL">CRITICAL</option>
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Detailed Description</label>
+                        <textarea id="form-description" required rows="4" placeholder="Describe the anomalous telemetry logs..."
+                            class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-indigo-500 transition resize-none"></textarea>
+                    </div>
+
+                    <button type="submit" class="w-full py-2.5 bg-indigo-600 hover:bg-indigo-500 transition font-bold text-xs text-white rounded-lg shadow-md uppercase tracking-wider flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-bolt"></i> Run AI Deduplication Check
+                    </button>
+                </form>
+            </section>
+
+            <section class="bg-slate-950 rounded-xl border border-slate-800 overflow-hidden shadow-xl lg:col-span-2">
+                <div class="px-6 py-5 border-b border-slate-800 flex justify-between items-center bg-slate-950">
+                    <div>
+                        <h2 class="text-base font-bold text-white flex items-center gap-2">
+                            <i class="fa-solid fa-list-check text-slate-400"></i> Operational Incident Queue
+                        </h2>
+                    </div>
+                    <button onclick="loadDashboardData()" class="px-3 py-1.5 bg-slate-800 hover:bg-slate-700 transition text-slate-200 text-xs font-semibold rounded-lg border border-slate-700 flex items-center gap-1.5">
+                        <i class="fa-solid fa-rotate"></i> Refresh
+                    </button>
+                </div>
+
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-800 bg-slate-900/50 text-xs font-bold uppercase tracking-wider text-slate-400">
+                                <th class="py-3 px-5">Incident Info</th>
+                                <th class="py-3 px-5">Source & Impact</th>
+                                <th class="py-3 px-5">AI Verification Link</th>
+                                <th class="py-3 px-5">Status Controller</th>
+                            </tr>
+                        </thead>
+                        <tbody id="incident-rows" class="divide-y divide-slate-800 text-sm">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+        </div>
+    </main>
 
     <script>
-        const API_URL = 'http://localhost:5000/api';
+        const API_URL = window.location.origin + "/api";
 
-        // Check health on load
-        window.addEventListener('load', () => {
-            healthCheck();
-            getStats();
-            listIncidents();
-            setInterval(() => {
-                getStats();
-                listIncidents();
-            }, 5000); // Refresh every 5 seconds
-        });
-
-        // Health Check
-        async function healthCheck() {
+        async function loadDashboardData() {
             try {
-                const response = await fetch(`${API_URL}/health`);
-                const data = await response.json();
+                // Fetch stats
+                const statsResponse = await fetch(`${API_URL}/incidents/stats`);
+                if (statsResponse.ok) {
+                    const stats = await statsResponse.json();
+                    document.getElementById('stat-total').innerText = stats.total_incidents ?? 0;
+                    document.getElementById('stat-duplicates').innerText = stats.duplicate_count ?? 0;
 
-                document.getElementById('healthDot').classList.remove('offline');
-                document.getElementById('healthStatus').textContent = `✅ API Online (${data.vector_store_size} vectors)`;
-                document.getElementById('healthResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-                document.getElementById('healthResult').classList.add('show');
-            } catch (e) {
-                document.getElementById('healthDot').classList.add('offline');
-                document.getElementById('healthStatus').textContent = '❌ API Offline';
+                    const openCount = stats.open_incidents ?? (stats.status_distribution?.Open || stats.status_distribution?.OPEN || 0);
+                    document.getElementById('stat-open').innerText = openCount;
+
+                    const rate = stats.deduplication_rate ??
+                        (stats.total_incidents ? ((stats.duplicate_count / stats.total_incidents) * 100).toFixed(1) : 0);
+                    document.getElementById('stat-rate').innerText = `${rate}%`;
+                }
+
+                // Fetch database records
+                const listResponse = await fetch(`${API_URL}/incidents`);
+                if (listResponse.ok) {
+                    let rawData = await listResponse.json();
+                    const container = document.getElementById('incident-rows');
+                    container.innerHTML = '';
+
+                    let incidentList = [];
+                    // Convert dictionary object mapping format into an iterable array cleanly
+                    if (rawData && !Array.isArray(rawData) && typeof rawData === 'object') {
+                        incidentList = rawData.incidents || Object.values(rawData);
+                    } else if (Array.isArray(rawData)) {
+                        incidentList = rawData;
+                    }
+
+                    if (incidentList.length === 0) {
+                        container.innerHTML = `
+                            <tr>
+                                <td colspan="4" class="py-12 text-center text-slate-500 font-medium bg-slate-950">
+                                    <div class="flex flex-col items-center justify-center space-y-2">
+                                        <i class="fa-solid fa-inbox text-3xl text-slate-600"></i>
+                                        <p>No operational incidents logged.</p>
+                                    </div>
+                                </td>
+                            </tr>`;
+                        return;
+                    }
+
+                    incidentList.forEach(incident => {
+                        if (!incident) return;
+
+                        const row = document.createElement('tr');
+
+                        // Cross-reference all field name combinations
+                        const idVal = incident.id || incident.Id || incident._id || incident.uuid || "";
+                        const titleText = incident.title || incident.Title || "Untitled Anomaly";
+                        const descriptionText = incident.description || incident.Description || "No logs available.";
+                        const sourceText = incident.source || incident.Source || "System Log";
+                        const severityText = String(incident.severity || incident.Severity || "LOW").toUpperCase();
+                        const statusText = String(incident.status || incident.Status || "OPEN").toUpperCase();
+                        const duplicateOf = incident.duplicate_of || incident.DuplicateOf || incident.duplicate_id || "";
+
+                        const isDupe = statusText === 'DUPLICATE' || duplicateOf;
+                        row.className = isDupe ? "bg-indigo-950/20 hover:bg-indigo-950/30 text-slate-200" : "bg-slate-950 hover:bg-slate-900/50 text-slate-100";
+
+                        let severityClass = "bg-slate-800 text-slate-400 border-slate-700";
+                        if (severityText === 'CRITICAL') severityClass = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+                        if (severityText === 'HIGH') severityClass = "bg-amber-500/10 text-amber-400 border-amber-500/20";
+
+                        const statusOptions = ['OPEN', 'DUPLICATE', 'RESOLVED', 'CLOSED'];
+                        let selectDropdown = `<select onchange="updateIncidentStatus('${idVal}', this.value)" class="bg-slate-900 border border-slate-700 rounded-lg px-2 py-1 text-xs font-semibold text-slate-200 cursor-pointer focus:outline-none focus:border-indigo-500">`;
+                        statusOptions.forEach(opt => {
+                            const selected = statusText === opt ? 'selected' : '';
+                            selectDropdown += `<option value="${opt}" ${selected}>${opt}</option>`;
+                        });
+                        selectDropdown += `</select>`;
+
+                        row.innerHTML = `
+                            <td class="py-4 px-5 max-w-xs">
+                                <div class="font-bold">${escapeHtml(titleText)}</div>
+                                <div class="text-xs text-slate-400 line-clamp-2 mt-0.5">${escapeHtml(descriptionText)}</div>
+                            </td>
+                            <td class="py-4 px-5 whitespace-nowrap">
+                                <div class="flex flex-col space-y-1">
+                                    <span class="text-xs font-semibold text-slate-300">
+                                        <i class="fa-solid fa-server text-[10px] text-slate-500 mr-1"></i>${escapeHtml(sourceText)}
+                                    </span>
+                                    <span class="px-2 py-0.5 text-[10px] font-bold rounded border w-max ${severityClass}">${severityText}</span>
+                                </div>
+                            </td>
+                            <td class="py-4 px-5">
+                                ${isDupe
+                                    ? `<div class="text-xs text-indigo-400 bg-indigo-500/5 border border-indigo-500/10 px-2.5 py-1.5 rounded-lg font-medium">
+                                         <i class="fa-solid fa-robot animate-pulse mr-1"></i> Linked to: <strong class="font-mono bg-indigo-950 px-1 py-0.5 rounded text-indigo-300">${String(duplicateOf).substring(0,8)}...</strong>
+                                       </div>`
+                                    : `<div class="text-xs text-slate-500 font-medium px-2 py-1"><i class="fa-solid fa-shield-halved mr-1 text-slate-600"></i> Primary Entry</div>`
+                                }
+                            </td>
+                            <td class="py-4 px-5 whitespace-nowrap">${selectDropdown}</td>
+                        `;
+                        container.appendChild(row);
+                    });
+                }
+            } catch (error) {
+                console.error("Failed fetching telemetry data mapping:", error);
             }
         }
 
-        // Get Statistics
-        async function getStats() {
-            try {
-                const response = await fetch(`${API_URL}/incidents/stats`);
-                const data = await response.json();
-
-                document.getElementById('totalIncidents').textContent = data.total_incidents;
-                document.getElementById('openIncidents').textContent = data.open_incidents;
-                document.getElementById('duplicateCount').textContent = data.duplicate_count;
-                document.getElementById('resolvedCount').textContent = data.resolved_count;
-                document.getElementById('deduplicationRate').textContent = data.deduplication_rate.toFixed(1) + '%';
-                document.getElementById('resolutionRate').textContent = data.resolution_rate.toFixed(1) + '%';
-                document.getElementById('statsText').textContent = `${data.total_incidents} incidents, ${data.duplicate_count} duplicates detected`;
-            } catch (e) {
-                console.error('Stats error:', e);
-            }
-        }
-
-        // Create Incident
-        document.getElementById('createForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const data = {
-                title: document.getElementById('title').value,
-                description: document.getElementById('description').value,
-                severity: document.getElementById('severity').value,
-                source: document.getElementById('source').value
+        async function submitNewIncident(event) {
+            event.preventDefault();
+            const payload = {
+                title: document.getElementById('form-title').value,
+                source: document.getElementById('form-source').value,
+                severity: document.getElementById('form-severity').value,
+                description: document.getElementById('form-description').value
             };
 
             try {
                 const response = await fetch(`${API_URL}/incidents`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(data)
+                    body: JSON.stringify(payload)
                 });
 
-                const result = await response.json();
-
                 if (response.ok) {
-                    document.getElementById('createSuccess').textContent =
-                        `✅ Incident created (ID: ${result.id}, Duplicate: ${result.is_duplicate})`;
-                    document.getElementById('createSuccess').classList.add('show');
-                    document.getElementById('createError').classList.remove('show');
-                    document.getElementById('createForm').reset();
-
-                    setTimeout(() => getStats(), 1000);
+                    const data = await response.json();
+                    if (data.is_duplicate || data.IsDuplicate) {
+                        alert(`🤖 AI Deduplication Intercepted standard entry! Matching Score tracked accurately.`);
+                    } else {
+                        alert(`✅ Unique incident registered cleanly!`);
+                    }
+                    document.getElementById('incident-form').reset();
+                    loadDashboardData();
                 } else {
-                    document.getElementById('createError').textContent = `❌ ${result.error}`;
-                    document.getElementById('createError').classList.add('show');
+                    alert(`⚠️ Server error: status ${response.status}`);
                 }
-            } catch (e) {
-                document.getElementById('createError').textContent = `❌ Error: ${e.message}`;
-                document.getElementById('createError').classList.add('show');
-            }
-        });
-
-        // Get Incident
-        document.getElementById('getForm').addEventListener('submit', async (e) => {
-            e.preventDefault();
-
-            const id = document.getElementById('incidentId').value;
-
-            try {
-                const response = await fetch(`${API_URL}/incidents/${id}`);
-                const data = await response.json();
-
-                if (response.ok) {
-                    document.getElementById('getResult').innerHTML = `<pre>${JSON.stringify(data, null, 2)}</pre>`;
-                    document.getElementById('getResult').classList.add('show');
-                    document.getElementById('getError').classList.remove('show');
-                } else {
-                    document.getElementById('getError').textContent = `❌ ${data.error}`;
-                    document.getElementById('getError').classList.add('show');
-                }
-            } catch (e) {
-                document.getElementById('getError').textContent = `❌ Error: ${e.message}`;
-                document.getElementById('getError').classList.add('show');
-            }
-        });
-
-        // List Incidents
-        async function listIncidents() {
-            try {
-                const response = await fetch(`${API_URL}/incidents`);
-                const data = await response.json();
-
-                const list = document.getElementById('incidentsList');
-                if (data.incidents.length === 0) {
-                    list.innerHTML = '<p style="color: #999;">No incidents yet</p>';
-                    return;
-                }
-
-                list.innerHTML = data.incidents.map(inc => `
-                    <div class="incident-item">
-                        <div class="incident-title">${inc.title}</div>
-                        <div class="incident-meta">
-                            <span class="badge ${inc.severity}">${inc.severity}</span>
-                            <span class="badge ${inc.status}">${inc.status}</span>
-                            ${inc.is_duplicate ? `<span class="badge duplicate">Duplicate</span>` : ''}
-                            <br>
-                            <small>ID: ${inc.id}</small><br>
-                            <small>Source: ${inc.source}</small>
-                        </div>
-                    </div>
-                `).join('');
-            } catch (e) {
-                console.error('List error:', e);
+            } catch (error) {
+                console.error(error);
             }
         }
+
+        async function updateIncidentStatus(incidentId, newStatus) {
+            let targetEndpoint = `${API_URL}/incidents/${incidentId}`;
+            if (newStatus === 'RESOLVED') targetEndpoint = `${API_URL}/incidents/${incidentId}/resolve`;
+            if (newStatus === 'CLOSED') targetEndpoint = `${API_URL}/incidents/${incidentId}/close`;
+
+            try {
+                const response = await fetch(targetEndpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ status: newStatus })
+                });
+                if (response.ok) loadDashboardData();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        function escapeHtml(str) {
+            if (!str) return '';
+            return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#039;");
+        }
+
+        document.addEventListener('DOMContentLoaded', loadDashboardData);
     </script>
 </body>
 </html>
